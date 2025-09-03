@@ -1,0 +1,97 @@
+string standalone.Fx_CloudLion_TestCreate_Product_And_Variants()
+{
+    shop_name = "test";
+    shopify_token = "test";
+
+    // ============ 1) Crear el producto ============
+    mutation_create = "mutation productCreate($product: ProductCreateInput!) { productCreate(product: $product) { product { id title } userErrors { field message } } }";
+
+    product_map = Map();
+    product_map.put("title","Cool socks desde CRM 3");
+    product_map.put("descriptionHtml","Camiseta en punto de algodón de gramaje alto con efecto lavado...");
+    product_map.put("productType","Ropa");
+    product_map.put("vendor","Boutique M");
+
+    variables_create = Map();
+    variables_create.put("product",product_map);
+
+    payload_create = Map();
+    payload_create.put("query",mutation_create);
+    payload_create.put("variables",variables_create);
+
+    headers = Map();
+    headers.put("Content-Type","application/json");
+    headers.put("X-Shopify-Access-Token",shopify_token);
+
+    response_create = invokeurl
+    [
+        url :"https://" + shop_name + ".myshopify.com/admin/api/2025-07/graphql.json"
+        type :POST
+        parameters:payload_create.toString()
+        headers:headers
+        detailed:true
+    ];
+
+    info response_create;
+
+    product_id = "";
+    if(response_create.get("responseText") != null)
+    {
+        resp = response_create.get("responseText").toMap();
+        if(resp.get("data") != null && resp.get("data").get("productCreate") != null)
+        {
+            product_id = resp.get("data").get("productCreate").get("product").get("id");
+        }
+    }
+
+    // ============ 2) Crear variantes con opciones ============
+    if(product_id != "")
+    {
+        mutation_variants = "mutation productVariantsBulkCreate($productId: ID!, $variants: [ProductVariantsBulkInput!]!) { productVariantsBulkCreate(productId: $productId, variants: $variants) { productVariants { id title price } userErrors { field message } } }";
+
+        variants_list = List();
+
+        // Variante 1: Red + Small
+        v1 = Map();
+        v1.put("price","9.99");
+        optionValues1 = List();
+        option1 = Map();
+        option1.put("name","Red / Small");
+        option1.put("optionName","Title");
+        optionValues1.add(option1);
+        v1.put("optionValues",optionValues1);
+        variants_list.add(v1);
+
+        // Variante 2: Blue + Large
+        v2 = Map();
+        v2.put("price","14.50");
+        optionValues2 = List();
+        option2 = Map();
+        option2.put("name","Blue / Large");
+        option2.put("optionName","Title");
+        optionValues2.add(option2);
+        v2.put("optionValues",optionValues2);
+        variants_list.add(v2);
+
+        variables_variants = Map();
+        variables_variants.put("productId",product_id);
+        variables_variants.put("variants",variants_list);
+
+        payload_variants = Map();
+        payload_variants.put("query",mutation_variants);
+        payload_variants.put("variables",variables_variants);
+
+        response_variants = invokeurl
+        [
+            url :"https://" + shop_name + ".myshopify.com/admin/api/2025-07/graphql.json"
+            type :POST
+            parameters:payload_variants.toString()
+            headers:headers
+            detailed:true
+        ];
+
+        info response_variants;
+    }
+
+    return "";
+}
