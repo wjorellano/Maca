@@ -1,0 +1,199 @@
+string standalone.Fx_CloudLion_TestAdd_ShopyFy_ByDaniel()
+{
+    shop_name = "test";
+    shopify_token = "test";
+
+    // ======== Mutación GraphQL: Crear producto ==========
+    query_create = "mutation productCreate($product: ProductCreateInput!) {"
+          + " productCreate(product: $product) {"
+          + "   product {"
+          + "     id"
+          + "     title"
+          + "     options {"
+          + "       id"
+          + "       name"
+          + "       position"
+          + "       optionValues {"
+          + "         id"
+          + "         name"
+          + "         hasVariants"
+          + "       }"
+          + "     }"
+          + "   }"
+          + "   userErrors {"
+          + "     field"
+          + "     message"
+          + "   }"
+          + " }"
+          + "}";
+
+    // ======== Variables del producto ==========
+    product_map = Map();
+    product_map.put("title","Cool socks CRM 16");
+    product_map.put("descriptionHtml","Camiseta en punto de algodón de gramaje alto con efecto lavado...");
+    product_map.put("productType","Ropa");
+    product_map.put("vendor","Boutique M");
+
+    // Opción Color
+    option1 = Map();
+    option1.put("name","Color");
+    option1_values = List();
+    color1 = Map(); color1.put("name","Green");
+    color2 = Map(); color2.put("name","Orange");
+    option1_values.add(color1); option1_values.add(color2);
+    option1.put("values",option1_values);
+
+    // Opción Size
+    option2 = Map();
+    option2.put("name","Size");
+    option2_values = List();
+    size1 = Map(); size1.put("name","Small");
+    size2 = Map(); size2.put("name","Large");
+    option2_values.add(size1); option2_values.add(size2);
+    option2.put("values",option2_values);
+
+    options_list = List();
+    options_list.add(option1);
+    options_list.add(option2);
+    product_map.put("productOptions",options_list);
+
+    variables_map = Map();
+    variables_map.put("product",product_map);
+
+    body_map = Map();
+    body_map.put("query",query_create);
+    body_map.put("variables",variables_map);
+
+    // ======== Crear producto en Shopify ==========
+    response_create = invokeurl
+    [
+        url :"https://" + shop_name + ".myshopify.com/admin/api/2025-07/graphql.json"
+        type :POST
+        parameters: body_map.toString()
+        headers: {
+            "Content-Type":"application/json",
+            "X-Shopify-Access-Token":shopify_token
+        }
+    ];
+
+    product_id = response_create.get("data").get("productCreate").get("product").get("id");
+
+    // ======== Mutación GraphQL: Crear Variants con imágenes e inventario ==========
+    query_variants = "mutation productVariantsBulkCreate($productId: ID!, $variants: [ProductVariantsBulkInput!]!, $media: [CreateMediaInput!]) {"
+          + " productVariantsBulkCreate(productId: $productId, variants: $variants, media: $media) {"
+          + "   productVariants {"
+          + "     id"
+          + "     title"
+          + "     price"
+		  + "     sku"
+          + "     availableForSale"
+          + "     selectedOptions {"
+          + "       name"
+          + "       value"
+          + "     }"
+          + "     image {"
+          + "       id"
+          + "       url"
+          + "     }"
+          + "   }"
+          + "   userErrors {"
+          + "     field"
+          + "     message"
+          + "   }"
+          + " }"
+          + "}";
+
+    // ======== Variables para variantes ==========
+    media_list = List();
+
+    media1 = Map();
+    media1.put("originalSource","https://hmcolombia.vtexassets.com/unsafe/1440x0/center/middle/https%3A%2F%2Fhmcolombia.vtexassets.com%2Farquivos%2Fids%2F5716373%2FCamiseta-lavada-Boxy-Fit---Negro-Paris---H-M-CO.jpg%3Fv%3D638909271503600000");
+    media1.put("alt","Variante Roja");
+    media1.put("mediaContentType","IMAGE");
+    media_list.add(media1);
+
+    media2 = Map();
+    media2.put("originalSource","https://hmcolombia.vtexassets.com/unsafe/1280x0/center/middle/https%3A%2F%2Fhmcolombia.vtexassets.com%2Farquivos%2Fids%2F5726758%2FCamiseta-lavada-Boxy-Fit---Lila-Paris-France---H-M-CO.jpg%3Fv%3D638912157663830000");
+    media2.put("alt","Variante Azul");
+    media2.put("mediaContentType","IMAGE");
+    media_list.add(media2);
+
+    // Variante 1
+    variant1 = Map();
+    variant1_optionValues = List();
+    variant1_color = Map(); variant1_color.put("name","Red"); variant1_color.put("optionName","Color");
+    variant1_size = Map(); variant1_size.put("name","Large"); variant1_size.put("optionName","Size");
+    variant1_optionValues.add(variant1_color); variant1_optionValues.add(variant1_size);
+    variant1.put("optionValues",variant1_optionValues);
+    variant1.put("price",10.99);
+    variant1.put("mediaSrc",list("https://hmcolombia.vtexassets.com/unsafe/1440x0/center/middle/https%3A%2F%2Fhmcolombia.vtexassets.com%2Farquivos%2Fids%2F5716373%2FCamiseta-lavada-Boxy-Fit---Negro-Paris---H-M-CO.jpg%3Fv%3D638909271503600000"));
+
+    // Inventario variante 1
+    inventory_list1 = List();
+    inventory_map1 = Map();
+    inventory_map1.put("availableQuantity",20);
+    inventory_map1.put("locationId","gid://shopify/Location/103600193821");
+    inventory_list1.add(inventory_map1);
+    variant1.put("inventoryQuantities",inventory_list1);
+	
+    inventory_item1 = Map();
+    inventory_item1.put("sku","SKU-GOLDEN-001");
+    variant1.put("inventoryItem",inventory_item1);
+
+    // Variante 2
+    variant2 = Map();
+    variant2_optionValues = List();
+    variant2_color = Map(); variant2_color.put("name","Blue"); variant2_color.put("optionName","Color");
+    variant2_size = Map(); variant2_size.put("name","Large"); variant2_size.put("optionName","Size");
+    variant2_optionValues.add(variant2_color); variant2_optionValues.add(variant2_size);
+    variant2.put("optionValues",variant2_optionValues);
+    variant2.put("price",12.99);
+    variant2.put("mediaSrc",list("https://hmcolombia.vtexassets.com/unsafe/1280x0/center/middle/https%3A%2F%2Fhmcolombia.vtexassets.com%2Farquivos%2Fids%2F5726758%2FCamiseta-lavada-Boxy-Fit---Lila-Paris-France---H-M-CO.jpg%3Fv%3D638912157663830000"));
+
+    // 🚀 Inventario variante
+    inventory_list2 = List();
+    inventory_map2 = Map();
+    inventory_map2.put("availableQuantity",20);
+    inventory_map2.put("locationId","gid://shopify/Location/103600193821");
+    inventory_list2.add(inventory_map2);
+    variant2.put("inventoryQuantities",inventory_list2);
+	
+    // SKU variante 2
+    inventory_item2 = Map();
+    inventory_item2.put("sku","SKU-GOLDEN-002");
+    variant2.put("inventoryItem",inventory_item2);
+
+    // ======== Lista de variantes ==========
+    variants_list = List();
+    variants_list.add(variant1);
+    variants_list.add(variant2);
+
+    variables_variants = Map();
+    variables_variants.put("productId",product_id);
+    variables_variants.put("variants",variants_list);
+    variables_variants.put("media",media_list);
+
+    body_variants = Map();
+    body_variants.put("query",query_variants);
+    body_variants.put("variables",variables_variants);
+
+    // ======== Crear Variants ==========
+    response_variants = invokeurl
+    [
+        url :"https://" + shop_name + ".myshopify.com/admin/api/2025-07/graphql.json"
+        type :POST
+        parameters: body_variants.toString()
+        headers: {
+            "Content-Type":"application/json",
+            "X-Shopify-Access-Token":shopify_token
+        }
+    ];
+
+    // ======== Resultado final ==========
+    result = Map();
+    result.put("product_id",product_id);
+    result.put("create_response",response_create);
+    result.put("variants_response",response_variants);
+
+    return result;
+}
